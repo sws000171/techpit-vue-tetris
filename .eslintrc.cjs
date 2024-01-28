@@ -6,6 +6,6 @@ module.exports = {
         "@vue/eslint-config-typescript/recommended"
     ],
     rules: {
-        "no-redeclare" : "off"
+        "no-redeclare": "off"
     }
 };
