@@ -19,7 +19,7 @@
       <tr v-for="(row,y) in filed" :key="y" >
         <td
           class="block"
-          v-for="(col,x) in row" :key="() => `${x}${y}`" >
+          v-for="(col,x) in row" :key="() => `${x}${y}`">
         </td>
       </tr>
     </table>
