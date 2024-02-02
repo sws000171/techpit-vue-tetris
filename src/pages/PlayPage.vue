@@ -8,6 +8,17 @@
     filed[i] = filedColumn;
   }
 
+//画面最上部の左端に縦の I-テトリミノを配置する（縦・横）
+filed[0][0] = 1;
+filed[1][0] = 1;
+filed[2][0] = 1;
+filed[3][0] = 1;
+
+//ブロック文字列の色情報を返すメソッド
+const classBlockColor = (x:number, y:number): string => {
+
+}
+
 </script>
 
 <template>
@@ -17,10 +28,12 @@
   <div class="container">
     <table class="filed" style="border-collapse: collapse;">
       <tr v-for="(row,y) in filed" :key="y" >
+        <!-- テトリスのフィールドの各マス目にその状態を描画する (0: 空白, 1: I-テトリミノ, etc.) -->
         <td
           class="block"
-          v-for="(col,x) in row" :key="() => `${x}${y}`">
-        </td>
+          v-for="(col,x) in row" :key="() => `${x}${y}`" 
+            v-bind:class="classBlockColor(x,y)">
+      </td>
       </tr>
     </table>
   </div>
@@ -28,7 +41,8 @@
 
 <!-- テトリスのフィールドのデザインを整えるためのスタイルシート -->
 <!-- scoped 対象のコンポーネント内のみ適用-->
-<style scoped>
+<!-- スタイルシートに SCSS 記法 (Sass) を利用する -->
+<style lang="scss" scoped>
 .container {
   display: flex;
   justify-content: center;
@@ -42,5 +56,30 @@
   width: 1em;
   height: 1em;
   border: 0.1px solid #95a5a6;
+/*
+ 各テトリミノに対応した色を扱うクラス定義
+ .block-i, .block-o のようにクラスが定義される
+*/
+  &-i {
+    background: #3498db;
+  }
+  &-o {
+    background: #f1c40f;
+  }
+  &-t {
+    background: #9b59b6;
+  }
+  &-j {
+    background: #1e3799;
+  }
+  &-l {
+    background: #e67e22;
+  }
+  &-s {
+    background: #2ecc71;
+  }
+  &-z {
+    background: #e74c3c;
+  }
 }
 </style>
