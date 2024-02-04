@@ -26,9 +26,9 @@ export class Field {
   } 
   // テトリスのフィールドで落下中のテトリミノの状態を反映する
   update(data: number[][],position:{x:number,y:number}): void {
-    for (var i = 0; i < data.length; i++){
+    for (let i = 0; i < data.length; i++){
       const cols = data[i];
-      for (var j = 0; j < cols.length; j++){
+      for (let j = 0; j < cols.length; j++){
         const block = cols[j];
         //ブロックだったら（ブロックの種類、0超の値を設定する）
         if (block > 0) {
@@ -49,5 +49,36 @@ export class Field {
       }
     }
     return new Field(newFieldData);
+  }
+
+  // 指定したテトリミノがテトリスのフィールド内で移動可能かどうか判定する
+  // 引数: data には、テトリミノの二次元配列を指定する
+  // 引数: position には、テトリミノの位置を指定する。指定した位置にテトリミノが移動可能か判定する
+  canMove(data: number[][], position: {x: number, y: number}): boolean {
+    const y_max = this.field.length;
+    const x_max = this.field[0].length;
+ 
+    if (position.y >= y_max) return false;
+ 
+    for (var i = 0; i < data.length; i++) {
+      const rows = data[i];
+      for (var j = 0; j < rows.length; j++) {
+        const block = rows[j];
+        // テトリミノのマス目が、テトリスのフィールドの下にはみ出していないか判定する
+        // テトリミノのマス目が、テトリスのフィールドの左にはみ出していないか判定する
+        // テトリミノのマス目が、テトリスのフィールドの右にはみ出していないか判定する
+        // テトリミノのマス目に、他のテトリミノが既に配置されているかどうか判定する
+        // 上記いずれかの条件にどれか一つでも当てはまれば、テトリミノは移動できないと判定する
+        if (block > 0) {
+          if (i + position.y > y_max - 1 ||
+              0 > j + position.x ||
+              j + position.x > x_max - 1 ||
+              this.field[i + position.y][j + position.x] > 0) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
   }
 }
