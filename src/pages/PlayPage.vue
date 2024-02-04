@@ -1,23 +1,44 @@
 <script lang="ts" setup>
-  const row = 20;
-  const column = 10;
-  const filed = new Array(row);
+import { reactive } from 'vue';
+import { Tetromino,TETROMINO_TYPE } from '../common/Tetromino';
+import { Field } from '../common/Field';
 
-  for (let i = 0 ; i < row ;i++){
-    const filedColumn = new Array(column).fill(0);
-    filed[i] = filedColumn;
-  }
-
-//画面最上部の左端に縦の I-テトリミノを配置する（縦・横）
-filed[0][0] = 1;
-filed[1][0] = 1;
-filed[2][0] = 1;
-filed[3][0] = 1;
+let staticField = new Field();
+const tetris = reactive({
+  field: new Field(),
+});
+const tetromino = reactive({
+  current: Tetromino.random(),
+  position: {x:3,y:0},
+});
 
 //ブロック文字列の色情報を返すメソッド
-const classBlockColor = (x:number, y:number): string => {
-
+const classBlockColor = (_x:number, _y:number): string => {
+  const type = tetris.field.data[_y][_x];
+  if (type > 0){
+    return Tetromino.id(type as TETROMINO_TYPE);
+  }
+  const { x, y } = tetromino.position;
+  const { data } = tetromino.current;
+ 
+  if (y <= _y && _y < y + data.length) {
+    const cols = data[_y - y];
+    if (x <= _x && _x < x + cols.length) {
+      if (cols[_x - x] > 0) {
+        return Tetromino.id(cols[_x - x] as TETROMINO_TYPE);
+      }
+    }
+  }
+  return "";
 }
+ 
+setInterval(() => {
+  tetris.field = Field.deepCopy(staticField);
+ 
+  tetromino.position.y++;
+  tetris.field.update(tetromino.current.data, tetromino.position);
+}, 1 * 1000);
+tetris.field.update(tetromino.current.data, tetromino.position);
 
 </script>
 
@@ -26,8 +47,8 @@ const classBlockColor = (x:number, y:number): string => {
   <h2>ユーザ名: {{ $route.query.name }}</h2>
 
   <div class="container">
-    <table class="filed" style="border-collapse: collapse;">
-      <tr v-for="(row,y) in filed" :key="y" >
+    <table class="field" style="border-collapse: collapse;">
+      <tr v-for="(row,y) in field" :key="y" >
         <!-- テトリスのフィールドの各マス目にその状態を描画する (0: 空白, 1: I-テトリミノ, etc.) -->
         <td
           class="block"

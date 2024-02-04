@@ -1,6 +1,3 @@
-import { reduceEachLeadingCommentRange } from "typescript";
-import { Static } from "vue";
-
 // 4-1 で解説した各テトリミノのデータ構造を表す二次元配列
 const tetrominos = [
   [
@@ -35,7 +32,6 @@ const tetrominos = [
   ],
 ];
 
-
 const TETROMINO_TYPE = {
   I:1, // I-テトリミノ（水色）
   O:2, // O-テトリミノ（黄色）
@@ -49,6 +45,7 @@ const TETROMINO_TYPE = {
 export type TETROMINO_TYPE = typeof TETROMINO_TYPE[keyof typeof TETROMINO_TYPE];
 
 export class Tetromino {
+  //変数定義
   private type : TETROMINO_TYPE
 
   constructor(type: TETROMINO_TYPE ){
@@ -77,7 +74,7 @@ export class Tetromino {
     }
   }
 
-  get data(): number[][]{
+  get data(): number[][] {
     return tetrominos[this.type];
   }
 
