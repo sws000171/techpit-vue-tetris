@@ -2,6 +2,7 @@
 import { onMounted, reactive } from 'vue';
 import { Tetromino,TETROMINO_TYPE } from '../common/Tetromino';
 import { Field } from '../common/Field';
+import TetrominoPreviewComponent  from '../components/TetrominoPreviewComponent.vue';
 
 //field生成（reactiveではない）
 //new した段階でField内のコンストラクタで、空fieldを生成する
@@ -14,6 +15,7 @@ const tetris = reactive({
 const tetromino = reactive({
   current: Tetromino.random(),
   position: {x:3,y:0},
+  next: Tetromino.random(),
 });
 
 //最初から画面にテトリミノを表示したいので解りやすくonMounted
@@ -58,10 +60,13 @@ const nextTetrisField = () => {
   //field再生成（移動中のデータで）
   staticField = new Field(tetris.field.data);
   //この命令はおそらく不要↓setInterval()と被る
-  //tetris.field = Field.deepCopy(staticField);
+  tetris.field = Field.deepCopy(staticField);
   
   //次のテトロミノ
-  tetromino.current = Tetromino.random();
+  //リアクティブで次のテトロミノを作成
+  tetromino.current = tetromino.next;
+  tetromino.next = Tetromino.random();
+  //tetromino.current = Tetromino.random();
   tetromino.position = { x: 3, y: 0 };
 }
 
@@ -83,17 +88,22 @@ setInterval(() => {
   <h2>ユーザ名: {{ $route.query.name }}</h2>
 
   <div class="container">
-    <table class="field" style="border-collapse: collapse;">
-      <tr v-for="(row, y) in tetris.field.data" :key="y">
-        <!-- テトリスのフィールドの各マス目にその状態を描画する (0: 空白, 1: I-テトリミノ, etc.)
-             クラスはブロック値に応じて設定し色を変える -->
-        <td
-          class="block"
-          v-for="x in row" :key="() => `${x}${y}`" 
-            v-bind:class="classBlockColor(x,y)">
-      </td>
-      </tr>
-    </table>
+    <div class="tetris">
+      <table class="field" style="border-collapse: collapse;">
+        <tr v-for="(row, y) in tetris.field.data" :key="y">
+          <!-- テトリスのフィールドの各マス目にその状態を描画する (0: 空白, 1: I-テトリミノ, etc.)
+               クラスはブロック値に応じて設定し色を変える -->
+          <td
+            class="block"
+            v-for="(col, x) in row" :key="() => `${x}${y}`" 
+              v-bind:class="classBlockColor(x,y)">
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div class="information">
+      <TetrominoPreviewComponent v-bind:tetromino="tetromino.next.data"/>
+    </div>
   </div>
 </template>
 
@@ -139,5 +149,9 @@ setInterval(() => {
   &-z {
     background: #e74c3c;
   }
+}
+ /** テトリスに関する情報をテトリスのフィールドの右に表示する **/
+.information {
+  margin-left: 0.5em;
 }
 </style>
