@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onMounted, reactive } from 'vue';
+import { onBeforeUnmount, onMounted, reactive } from 'vue';
 import { Tetromino,TETROMINO_TYPE } from '../common/Tetromino';
 import { Field } from '../common/Field';
 import TetrominoPreviewComponent  from '../components/TetrominoPreviewComponent.vue';
@@ -20,7 +20,13 @@ const tetromino = reactive({
 
 //最初から画面にテトリミノを表示したいので解りやすくonMounted
 onMounted(()=>{
-  tetris.field.update(tetromino.current.data, tetromino.position);
+  //tetris.field.update(tetromino.current.data, tetromino.position);
+  resetDrop();
+  document.addEventListener('keydown',onKeyDown);
+})
+
+onBeforeUnmount(()=>{
+  document.removeEventListener('keydown',onKeyDown);
 })
 
 //ブロック文字列の色情報を返すメソッド
@@ -70,16 +76,42 @@ const nextTetrisField = () => {
   tetromino.position = { x: 3, y: 0 };
 }
 
-//１秒毎に下（y）に１個落とす
-setInterval(() => {
-  
-  tetris.field = Field.deepCopy(staticField);
-  if (canDropCurrentTetromino()){
-    tetromino.position.y++;
-  }else{
-    nextTetrisField();
+const onKeyDown = (e:KeyboardEvent) => {
+  switch (e.key) {
+    case "Down":
+    case "ArrowDown":
+      //  判定して移動可能なら下に１個落とす
+      if (canDropCurrentTetromino()){
+        tetromino.position.y++;
+        resetDrop();
+      }else{
+        nextTetrisField();
+      }
+      break;
   }
-}, 1 * 1000);
+}
+
+// 1 秒ごとに 1 マス下に落下する関数を作成する関数
+const resetDropInterval = () =>{
+  // 1秒ごとに発火する関数の識別子・状態を持つ
+  let intervalId = -1;
+
+  return () => {
+    //解除
+    if (intervalId !== -1) clearInterval(intervalId);
+    //１秒毎に下（y）に１個落とす
+    intervalId = setInterval(() => {
+      tetris.field = Field.deepCopy(staticField);
+      if (canDropCurrentTetromino()){
+        tetromino.position.y++;
+      }else{
+        nextTetrisField();
+      }
+    }, 1 * 1000);
+  };
+};
+const resetDrop = resetDropInterval();
+
 
 </script>
 

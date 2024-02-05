@@ -60,9 +60,9 @@ export class Field {
  
     if (position.y >= y_max) return false;
  
-    for (var i = 0; i < data.length; i++) {
+    for (let i = 0; i < data.length; i++) {
       const rows = data[i];
-      for (var j = 0; j < rows.length; j++) {
+      for (let j = 0; j < rows.length; j++) {
         const block = rows[j];
         // テトリミノのマス目が、テトリスのフィールドの下にはみ出していないか判定する
         // テトリミノのマス目が、テトリスのフィールドの左にはみ出していないか判定する
