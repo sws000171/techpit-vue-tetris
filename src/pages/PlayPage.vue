@@ -20,7 +20,6 @@ const tetromino = reactive({
 
 //最初から画面にテトリミノを表示したいので解りやすくonMounted
 onMounted(()=>{
-  //tetris.field.update(tetromino.current.data, tetromino.position);
   resetDrop();
   document.addEventListener('keydown',onKeyDown);
 })
@@ -88,6 +87,36 @@ const onKeyDown = (e:KeyboardEvent) => {
         nextTetrisField();
       }
       break;
+    case "Up":
+    case "ArrowUp":
+      while(canDropCurrentTetromino()){
+        tetromino.position.y++;
+        resetDrop();
+      }
+      nextTetrisField();
+      break;
+    case "Left":
+    case "ArrowLeft":
+    {
+      const data = tetromino.current.data;
+      const {x,y} = tetromino.position;
+      const leftPosition = {x:x - 1,y:y};
+      if (tetris.field.canMove(data,leftPosition)){
+        tetromino.position.x--;
+      }
+    }
+    break;
+    case "Right":
+    case "ArrowRight":
+    {
+      const data = tetromino.current.data;
+      const {x,y} = tetromino.position;
+      const RightPosition = {x:x + 1,y:y};
+      if (tetris.field.canMove(data,RightPosition)){
+        tetromino.position.x++;
+      }
+    }
+      break;
   }
 }
 
@@ -97,8 +126,9 @@ const resetDropInterval = () =>{
   let intervalId = -1;
 
   return () => {
-    //解除
+    //解除（初回以外、初回は-1なので）
     if (intervalId !== -1) clearInterval(intervalId);
+    //clearInterval(intervalId);
     //１秒毎に下（y）に１個落とす
     intervalId = setInterval(() => {
       tetris.field = Field.deepCopy(staticField);
