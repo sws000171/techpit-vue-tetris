@@ -84,4 +84,17 @@ export class Tetromino {
   
     return new Tetromino(type as TETROMINO_TYPE);
   }
+
+  // `num` 回 90度テトリミノの二次元行列 `data` を回転させた結果 (二次元配列) を取得する関数
+  static rotate(num: number, data: number[][]): number[][] {
+    let tetromino: number[][] = data;
+    for (let i = 0; i < num; i++) {
+      // 一行に存在する列を全て反転させて新たな二次元配列を作成する (90度回転させる)
+      tetromino = tetromino[0].map((_, index) =>
+      tetromino.map((row) => row[index]).reverse()
+      );
+    }
+    return tetromino;
+  }
+
 }

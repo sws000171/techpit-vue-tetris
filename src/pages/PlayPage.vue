@@ -10,23 +10,29 @@ let staticField = new Field();
 //落下中のfield保持用
 const tetris = reactive({
   field: new Field(),
+  score: 0,
 });
 
 const tetromino = reactive({
   current: Tetromino.random(),
   position: {x:3,y:0},
+  rotate: 0,
   next: Tetromino.random(),
 });
 
-//最初から画面にテトリミノを表示したいので解りやすくonMounted
 onMounted(()=>{
-  resetDrop();
   document.addEventListener('keydown',onKeyDown);
+  resetDrop();
 })
 
 onBeforeUnmount(()=>{
   document.removeEventListener('keydown',onKeyDown);
 })
+
+// 落下中のテトリミノ (二次元配列) を `rotate` 回、回転させた結果を取得する
+const currentTetrominoData = () =>{
+  return Tetromino.rotate(tetromino.rotate, tetromino.current.data);
+}
 
 //ブロック文字列の色情報を返すメソッド
 const classBlockColor = (_x:number, _y:number): string => {
@@ -35,7 +41,8 @@ const classBlockColor = (_x:number, _y:number): string => {
     return Tetromino.id(type as TETROMINO_TYPE);
   }
   const { x, y } = tetromino.position;
-  const { data } = tetromino.current;
+  //const { data } = tetromino.current;
+  const data = currentTetrominoData();
  
   if (y <= _y && _y < y + data.length) {
     const cols = data[_y - y];
@@ -48,35 +55,59 @@ const classBlockColor = (_x:number, _y:number): string => {
   return "";
 }
 
+//１ライン下に動かす（判定）メソッド
 const canDropCurrentTetromino = (): boolean => {
   const { x, y } = tetromino.position;
   const droppedPosition = {x, y: y + 1};
  
-  const data = tetromino.current.data;
+  //const data = tetromino.current.data;
+  const data = currentTetrominoData();
   //1個下に動かしたときの判定
   return tetris.field.canMove(data, droppedPosition);
 }
  
+//次のテトロミノの作成
 const nextTetrisField = () => {
-  const data = tetromino.current.data;
+  //const data = tetromino.current.data;
+  const data = currentTetrominoData();
   const position = tetromino.position;
  
   tetris.field.update(data, position);
+  const {field,score} = deleteLine();
+
   //field再生成（移動中のデータで）
-  staticField = new Field(tetris.field.data);
+  //staticField = new Field(tetris.field.data);
+  staticField = new Field(field);
+
   //この命令はおそらく不要↓setInterval()と被る
   tetris.field = Field.deepCopy(staticField);
+
+  tetris.score += score;
   
   //次のテトロミノ
   //リアクティブで次のテトロミノを作成
   tetromino.current = tetromino.next;
   tetromino.next = Tetromino.random();
   //tetromino.current = Tetromino.random();
+  tetromino.rotate = 0;
   tetromino.position = { x: 3, y: 0 };
 }
 
+//キーイベント部分
 const onKeyDown = (e:KeyboardEvent) => {
   switch (e.key) {
+    case " ":
+      {
+        const nextRotate = (tetromino.rotate + 1) % 4;
+        //90度回転
+        const data = Tetromino.rotate(nextRotate, tetromino.current.data);
+        //90度回転した状態で動かせるかを判定
+        if (tetris.field.canMove(data, tetromino.position)) {
+          //動かせるのならspaceを押した回数/4を設定
+          tetromino.rotate = nextRotate;
+        }
+      }
+      break;
     case "Down":
     case "ArrowDown":
       //  判定して移動可能なら下に１個落とす
@@ -97,28 +128,47 @@ const onKeyDown = (e:KeyboardEvent) => {
       break;
     case "Left":
     case "ArrowLeft":
-    {
-      const data = tetromino.current.data;
-      const {x,y} = tetromino.position;
-      const leftPosition = {x:x - 1,y:y};
-      if (tetris.field.canMove(data,leftPosition)){
-        tetromino.position.x--;
+      {
+        //const data = tetromino.current.data;
+        const data = currentTetrominoData();
+        const {x,y} = tetromino.position;
+        const leftPosition = {x:x - 1,y:y};
+        if (tetris.field.canMove(data,leftPosition)){
+          tetromino.position.x--;
+        }
       }
-    }
-    break;
+      break;
     case "Right":
     case "ArrowRight":
-    {
-      const data = tetromino.current.data;
-      const {x,y} = tetromino.position;
-      const RightPosition = {x:x + 1,y:y};
-      if (tetris.field.canMove(data,RightPosition)){
-        tetromino.position.x++;
+      {
+        //const data = tetromino.current.data;
+        const data = currentTetrominoData();
+        const {x,y} = tetromino.position;
+        const RightPosition = {x:x + 1,y:y};
+        if (tetris.field.canMove(data,RightPosition)){
+          tetromino.position.x++;
+        }
       }
-    }
       break;
   }
 }
+
+//ライン削除メソッド
+const deleteLine = () =>{
+  let score = 0;
+  const field = tetris.field.data.filter((row)=>{
+    if (row.every(col => col > 0)){
+      score++;
+      return false;
+    }
+    return true;
+  });
+
+  for (let i = 0; i < score; i++) {
+    field.unshift(new Array(field[0].length).fill(0));
+  }
+  return { score, field };
+};
 
 // 1 秒ごとに 1 マス下に落下する関数を作成する関数
 const resetDropInterval = () =>{
@@ -165,6 +215,9 @@ const resetDrop = resetDropInterval();
     </div>
     <div class="information">
       <TetrominoPreviewComponent v-bind:tetromino="tetromino.next.data"/>
+      <ul class="data">
+        <i>スコア：{{tetris.score}}</i>
+      </ul>
     </div>
   </div>
 </template>
@@ -214,6 +267,14 @@ const resetDrop = resetDropInterval();
 }
  /** テトリスに関する情報をテトリスのフィールドの右に表示する **/
 .information {
+position: relative;
   margin-left: 0.5em;
 }
+ul.data {
+    list-style: none;
+    position: absolute;
+    font-size: 1.3em;
+    padding-left: 0;
+    bottom: 0;
+  }
 </style>
