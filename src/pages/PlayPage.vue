@@ -1,29 +1,68 @@
 <script lang="ts" setup>
-import { onBeforeUnmount, onMounted, reactive } from 'vue';
+import { onBeforeUnmount, reactive, watch } from 'vue';
 import { Tetromino,TETROMINO_TYPE } from '../common/Tetromino';
 import { Field } from '../common/Field';
 import TetrominoPreviewComponent  from '../components/TetrominoPreviewComponent.vue';
 
+const PLAY_STATUS = {
+  GAMESTART: 1, // ゲームスタート
+  PLAYING: 2, // プレイ中
+  GAMEOVER: 3, // ゲームオーバー
+} as const;
+export type PLAY_STATUS = typeof PLAY_STATUS[keyof typeof PLAY_STATUS];
+
 //field生成（reactiveではない）
 //new した段階でField内のコンストラクタで、空fieldを生成する
 let staticField = new Field();
+
+const gameStatus = reactive({ gameStatus: PLAY_STATUS.GAMESTART as PLAY_STATUS });
+const isStandby = () => gameStatus.gameStatus !== PLAY_STATUS.PLAYING;
+const gameStart = () => gameStatus.gameStatus = PLAY_STATUS.PLAYING;
+
 //落下中のfield保持用
 const tetris = reactive({
   field: new Field(),
   score: 0,
 });
 
+watch(gameStatus, (currentState) => {
+   switch(currentState.gameStatus as PLAY_STATUS) {
+     case PLAY_STATUS.GAMESTART:
+       break;
+     case PLAY_STATUS.PLAYING:
+       document.addEventListener('keydown', onKeyDown);
+ 
+       staticField = new Field();
+       tetris.field = new Field();
+ 
+       tetromino.current = Tetromino.random();
+       tetromino.next = Tetromino.random();
+ 
+       tetris.score = 0;
+       resetDrop();
+ 
+       break;
+     case PLAY_STATUS.GAMEOVER:
+       document.removeEventListener('keydown', onKeyDown);
+ 
+       tetromino.next = Tetromino.empty();
+       break;
+   }
+ })
+
 const tetromino = reactive({
-  current: Tetromino.random(),
+  //current: Tetromino.random(),
+  current: Tetromino.empty(),
   position: {x:3,y:0},
   rotate: 0,
-  next: Tetromino.random(),
+  //next: Tetromino.random(),
+  next: Tetromino.empty(),
 });
 
-onMounted(()=>{
-  document.addEventListener('keydown',onKeyDown);
-  resetDrop();
-})
+//onMounted(()=>{
+//  document.addEventListener('keydown',onKeyDown);
+//  resetDrop();
+//})
 
 onBeforeUnmount(()=>{
   document.removeEventListener('keydown',onKeyDown);
@@ -36,14 +75,20 @@ const currentTetrominoData = () =>{
 
 //ブロック文字列の色情報を返すメソッド
 const classBlockColor = (_x:number, _y:number): string => {
+  //field.dataにはテトリスのフィールドが格納されている
+  //（落下後のテトロミノの色を設定する）
   const type = tetris.field.data[_y][_x];
   if (type > 0){
     return Tetromino.id(type as TETROMINO_TYPE);
   }
+  // テトリスのフィールドのマス目が空白であれば、
+  // 落下中のテトリミノの描画範囲をチェックする
+  //（落下中のテトロミノの色を設定する）
   const { x, y } = tetromino.position;
   //const { data } = tetromino.current;
   const data = currentTetrominoData();
- 
+  // 落下中のテトリミノの描画範囲のマス目をチェックする
+  // マス目が空白以外であれば、対応するテトリミノの識別子を返却する
   if (y <= _y && _y < y + data.length) {
     const cols = data[_y - y];
     if (x <= _x && _x < x + cols.length) {
@@ -91,6 +136,11 @@ const nextTetrisField = () => {
   //tetromino.current = Tetromino.random();
   tetromino.rotate = 0;
   tetromino.position = { x: 3, y: 0 };
+
+  if(!canDropCurrentTetromino()) {
+    gameStatus.gameStatus = PLAY_STATUS.GAMEOVER as PLAY_STATUS;
+    resetDrop(true);
+  }
 }
 
 //キーイベント部分
@@ -175,9 +225,11 @@ const resetDropInterval = () =>{
   // 1秒ごとに発火する関数の識別子・状態を持つ
   let intervalId = -1;
 
-  return () => {
+  //return () => {
+  return (gameover: boolean = false) => {
     //解除（初回以外、初回は-1なので）
     if (intervalId !== -1) clearInterval(intervalId);
+    if (gameover) return;
     //clearInterval(intervalId);
     //１秒毎に下（y）に１個落とす
     intervalId = setInterval(() => {
@@ -217,6 +269,7 @@ const resetDrop = resetDropInterval();
       <TetrominoPreviewComponent v-bind:tetromino="tetromino.next.data"/>
       <ul class="data">
         <i>スコア：{{tetris.score}}</i>
+        <li><button v-if="isStandby()" @click.self.stop="gameStart">ゲームスタート</button></li>
       </ul>
     </div>
   </div>

@@ -52,6 +52,11 @@ export class Tetromino {
     this.type = type;
   }
 
+  // 空のテトリミノを取得する
+  static empty(): Tetromino {
+    return new Tetromino(0 as TETROMINO_TYPE);
+  }
+  
   // 4-2 で定義した、各テトリミノに対応した CSS のクラス名 (識別子) を取得する関数
   static id(type: TETROMINO_TYPE): string {
     switch(type){
